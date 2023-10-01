@@ -203,16 +203,26 @@ const long double PI = 3.141592653589793;
 
 
 template <typename T>
-void warshall_floyd(vector<vector<T>> &g) {
+vector<T> dijkstra(Graph<T> &g, int s) {
     const auto TINF = 1e9;
-    for (int k = 0; k < g.size(); k++) {
-        for (int i = 0; i < g.size(); i++) {
-            for (int j = 0; j < g.size(); j++) {
-                if (g[i][k] == TINF || g[k][j] == TINF) continue;
-                g[i][j] = min(g[i][j], g[i][k] + g[k][j]);
-            }
+    vector<T> dist(g.size(), TINF);
+    priority_queue<pair<T, int>, vector<pair<T, int>>, greater<pair<T, int>>> que;
+    dist[s] = 0;
+    que.emplace(dist[s], s);
+    while (!que.empty()) {
+        T cost;
+        int idx;
+        tie(cost, idx) = que.top();
+        que.pop();
+        if (dist[idx] < cost) continue;
+        for (auto &e : g.g[idx]) {
+            auto next_cost = cost + e.cost;
+            if (dist[e.to] <= next_cost) continue;
+            dist[e.to] = next_cost;
+            que.emplace(dist[e.to], e.to);
         }
     }
+    return dist;
 }
 
 ll N, M, D, K;
@@ -238,22 +248,30 @@ void init(){
 }
 
 ll calc_cost(vl r){
-    ll ret = 0;
-    mat<ll> dist(N, vl(N, inf));
+    // 初期の距離行列を計算
+    Graph<ll> g(N);
     rep(i, M){
-        dist[u[i]][v[i]] = w[i];
-        dist[v[i]][u[i]] = w[i];
+        g.add_edge(u[i], v[i], w[i]);
     }
-    warshall_floyd(dist);
+    mat<ll> dist(N, vl(N, inf));
+    rep(i, N){
+        dist[i] = dijkstra(g, i);
+    }
+
     ll cost = 0;
     rep(k, D){
-        mat<ll> dist_k(N, vl(N, inf));
+        // 時刻kでの距離行列を計算
+        Graph<ll> gk(N);
         rep(i, M){
             if(r[i] == k) continue;
-            dist_k[u[i]][v[i]] = w[i];
-            dist_k[v[i]][u[i]] = w[i];
+            gk.add_edge(u[i], v[i], w[i]);
         }
-        warshall_floyd(dist_k);
+        mat<ll> dist_k(N, vl(N, inf));
+        rep(i, N){
+            dist_k[i] = dijkstra(gk, i);
+        }
+
+        // 差分をコストに加算
         rep(i, N){
             rep(j, N){
                 if(i == j) continue;
