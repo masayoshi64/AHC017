@@ -201,9 +201,92 @@ struct Graph
 const long double eps = 0.000000000000001;
 const long double PI = 3.141592653589793;
 
+
+template <typename T>
+void warshall_floyd(vector<vector<T>> &g) {
+    const auto TINF = 1e9;
+    for (int k = 0; k < g.size(); k++) {
+        for (int i = 0; i < g.size(); i++) {
+            for (int j = 0; j < g.size(); j++) {
+                if (g[i][k] == TINF || g[k][j] == TINF) continue;
+                g[i][j] = min(g[i][j], g[i][k] + g[k][j]);
+            }
+        }
+    }
+}
+
+ll N, M, D, K;
+vl u, v, w, x, y;
+
+void init(){
+    cin >> N >> M >> D >> K;
+    u.resize(M);
+    v.resize(M);
+    w.resize(M);
+    x.resize(K);
+    y.resize(K);
+    rep(i, M){
+        cin >> u[i] >> v[i] >> w[i];
+        u[i]--;
+        v[i]--;
+    }
+    rep(i, K){
+        cin >> x[i] >> y[i];
+        x[i]--;
+        y[i]--;
+    }
+}
+
+ll calc_cost(vl r){
+    ll ret = 0;
+    mat<ll> dist(N, vl(N, inf));
+    rep(i, M){
+        dist[u[i]][v[i]] = w[i];
+        dist[v[i]][u[i]] = w[i];
+    }
+    warshall_floyd(dist);
+    ll cost = 0;
+    rep(k, D){
+        mat<ll> dist_k(N, vl(N, inf));
+        rep(i, M){
+            if(r[i] == k) continue;
+            dist_k[u[i]][v[i]] = w[i];
+            dist_k[v[i]][u[i]] = w[i];
+        }
+        warshall_floyd(dist_k);
+        rep(i, N){
+            rep(j, N){
+                if(i == j) continue;
+                cost += dist_k[i][j] - dist[i][j];
+            }
+        }
+    }
+    cost *= 1e3 / (D * N * (N - 1));
+    return cost;
+}
+
+void output(vl r){
+    rep(i, SZ(r)){
+        cout << r[i] + 1 << ' ';
+    }
+    cout << endl;
+    cerr << "Score: " << calc_cost(r) << endl;
+}
+
+void solve(){
+    vl r(M);
+    rep(i, M){
+        r[i] = i % D;
+    }
+    output(r);
+}
+
 int main(int argc, char *argv[]) {
     cin.tie(0);
     ios::sync_with_stdio(0);
     cout << setprecision(30) << fixed;
     cerr << setprecision(30) << fixed;
+
+    init();
+    solve();
 }
